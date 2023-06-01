@@ -1,7 +1,7 @@
 {
   "name": "pufferfishclient",
   "version": "0.1.0",
-  "repository": "https://github.com/CodeForAfrica/PesaYetu.git",
+  "repository": "https://github.com/biometrioearth/pufferfish-client",
   "author": "Biometrio.earth <biometrio.earth@.org> (https://biometrio.earth.org)",
   "license": "MIT",
   "private": true,
@@ -23,7 +23,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "yarn eslint --fix --ignore-path './.gitignore' './'"
   },
   "eslintConfig": {
     "extends": [
@@ -44,12 +45,25 @@
     ]
   },
   "devDependencies": {
+    "@babel/core": "^7.22.1",
+    "@babel/eslint-parser": "^7.21.8",
+    "@babel/preset-env": "^7.22.4",
+    "babel-loader": "^9.1.2",
+    "babel-plugin-module-resolver": "^5.0.0",
+    "babel-plugin-transform-imports": "^2.0.0",
     "eslint": "^8.41.0",
     "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-import-resolver-babel-module": "^5.3.2",
     "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-json": "^3.1.0",
     "eslint-plugin-jsx-a11y": "^6.7.1",
+    "eslint-plugin-markdown": "^3.0.0",
+    "eslint-plugin-module-resolver": "^1.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^2.8.8",
     "tailwindcss": "^3.3.2"
   }
 }

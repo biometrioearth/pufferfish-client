@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-const StartPage = () => {
+function StartPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold underline">
@@ -8,6 +8,6 @@ const StartPage = () => {
       </h1>
     </div>
   );
-};
+}
 
 export default StartPage;

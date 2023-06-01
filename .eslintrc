@@ -9,7 +9,7 @@
     "airbnb",
     "plugin:react-hooks/recommended",
     "plugin:prettier/recommended",
-    "react-app", 
+    "react-app",
     "prettier"
   ],
   "env": {

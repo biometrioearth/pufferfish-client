@@ -24,6 +24,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "format": "yarn prettier --write --ignore-path './.gitignore' '**/*.+(json|md|yml)' '.'",
     "lint": "yarn eslint --fix --ignore-path './.gitignore' './'"
   },
   "eslintConfig": {

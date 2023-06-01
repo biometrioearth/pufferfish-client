@@ -1,9 +1,9 @@
 {
-    "compilerOptions": {
-      "baseUrl": ".",
-      "paths": {
-        "@/pufferfishclient/*": ["./src/*"]
-      }
-    },
-    "exclude": ["node_modules"]
-  }
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/pufferfishclient/*": ["src/*"]
+    }
+  },
+  "exclude": ["node_modules"]
+}

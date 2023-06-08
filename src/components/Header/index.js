@@ -8,7 +8,7 @@ import DropdownUser from '../../components/DropdownUser';
 
 const Header = ({ sidebarOpen, setSidebarOpen }) => {
   return (
-    <header className="sticky top-0 z-999 flex w-full bg-white shadow-1 dark:bg-boxdark dark:shadow-none">
+    <header className="sticky top-0 z-999 flex w-full bg-white shadow-1 dark:bg-boxdark dark:shadow-none bg-bodydark2">
       <div className="flex flex-grow items-center justify-between py-4 px-4 shadow-2 md:px-6 2xl:px-11">
         <div className="flex items-center gap-2 sm:gap-4 lg:hidden">
           {/* Hamburger Toggle BTN */}
@@ -18,7 +18,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
               e.stopPropagation();
               setSidebarOpen(!sidebarOpen);
             }}
-            className="z-99999 block rounded-sm border border-stroke bg-white p-1.5 shadow-sm dark:border-strokedark dark:bg-boxdark lg:hidden"
+            className="z-99999 block rounded-sm border border-stroke bg-white p-1.5 text-black shadow-sm dark:border-strokedark dark:bg-boxdark lg:hidden"
           >
             <span className="relative block h-5.5 w-5.5 cursor-pointer">
               <span className="du-block absolute right-0 h-full w-full">
@@ -52,12 +52,14 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
           <Link className="block flex-shrink-0 lg:hidden" to="/" >
             <img src={Logo} alt="Logo" width="50px" />
           </Link>
+
+          <h5 className='text-black text-md'>Pufferfish</h5>
         </div>
 
         <div className="hidden sm:block">
           <form action="https://formbold.com/s/unique_form_id" method="POST">
             <div className="relative">
-              <button className="absolute top-1/2 left-0 -translate-y-1/2">
+              {/*   <button className="absolute top-1/2 left-0 -translate-y-1/2">
                 <svg
                   className="fill-body hover:fill-primary dark:fill-bodydark dark:hover:fill-primary"
                   width="20"
@@ -79,13 +81,15 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                     fill=""
                   />
                 </svg>
-              </button>
+              </button> */}
 
-              <input
+              {/*  <input
                 type="text"
                 placeholder="Type to search..."
                 className="w-full bg-transparent pr-4 pl-9 focus:outline-none"
-              />
+              /> */}
+              <h1 className="text-3xl text-black w-full bg-transparent pr-4 pl-9 focus:outline-none">Pufferfish</h1>
+
             </div>
           </form>
         </div>
@@ -97,12 +101,18 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
             {/* Dark Mode Toggler */}
 
             {/* Notification Menu Area */}
-             {/* <DropdownNotification /> */}
+            {/* <DropdownNotification /> */}
             {/* Notification Menu Area */}
 
             {/* Chat Notification Area */}
             {/* <DropdownMessage /> */}
             {/* Chat Notification Area */}
+
+            <input
+            type="text"
+            placeholder="Type to search..."
+            className="w-full bg-transparent text-black pr-4 pl-9 focus:outline-none hidden md:block"
+          />
           </ul>
 
           {/* User Area */}

@@ -1,18 +1,429 @@
-import React from 'react'
-import Layout from '../../components/Layout'
+import React, { useState, useEffect, useMemo } from 'react';
+import { useDropzone } from 'react-dropzone';
+import Layout from '../../components/Layout';
+import { XIcon } from '@heroicons/react/solid';
+import { CloudUploadIcon } from '@heroicons/react/outline';
+import { CheckIcon } from '@heroicons/react/solid';
+
+const baseStyle = {
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  padding: '20px',
+  borderWidth: 2,
+  borderRadius: 2,
+  borderColor: '#164A1A',
+  borderStyle: 'dashed',
+  backgroundColor: '#fafafa',
+  color: '#bdbdbd',
+  outline: 'none',
+  transition: 'border .24s ease-in-out',
+  justifyContent: 'center',
+  height: '200px',
+};
+
+const focusedStyle = {
+  borderColor: '#2196f3'
+};
+
+const acceptStyle = {
+  borderColor: '#00e676'
+};
+
+const rejectStyle = {
+  borderColor: '#ff1744'
+};
+
 
 const Project = () => {
+  const [files, setFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [isUploading, setIsUploading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filesPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [overallProgress, setOverallProgress] = useState(0);
+  const [currentFile, setCurrentFile] = useState(null);
+  const [isProgressOpen, setIsProgressOpen] = useState(false);
+  const [showFiles, setShowFiles] = useState(false);
+
+  const handleClose = () => {
+    setIsProgressOpen(false);
+  };
+
+  const onDrop = (acceptedFiles) => {
+    setFiles([...files, ...acceptedFiles]);
+  };
+
+  const { getRootProps, getInputProps, isDragActive, isFocused, isDragAccept, isDragReject } = useDropzone({ onDrop });
+
+  const style = useMemo(() => ({
+    ...baseStyle,
+    ...(isFocused ? focusedStyle : {}),
+    ...(isDragAccept ? acceptStyle : {}),
+    ...(isDragReject ? rejectStyle : {})
+  }), [isFocused, isDragAccept, isDragReject]);
+
+  const handleFileUpload = async () => {
+    setIsUploading(true);
+    setUploadProgress({});
+    setOverallProgress(0);
+    setCurrentFile(files[0]);
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await uploadFile(formData);
+        const progress = Math.round(((i + 1) / files.length) * 100);
+        setUploadProgress((prevProgress) => ({ ...prevProgress, [file.name]: progress }));
+
+        const totalProgress = Math.round(((i + 1) / files.length) * 100);
+        setOverallProgress(totalProgress);
+
+        console.log('File uploaded:', response);
+      } catch (error) {
+        console.error('File upload error:', error);
+      }
+    }
+
+    setIsUploading(false);
+    setCurrentPage(1);
+    setShowFiles(true);
+  };
+
+
+  const uploadFile = (formData) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // Simulating an API call
+        const success = Math.random() < 0.8; // 80% success rate
+        if (success) {
+          resolve('Success');
+        } else {
+          reject('Error');
+        }
+      }, 2000);
+    });
+  };
+
+  /*  const handleSearch = (event) => {
+     setSearchTerm(event.target.value);
+     setCurrentPage(1);
+   }; */
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleSortOption = (event) => {
+    setSortOption(event.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleDelete = (fileName) => {
+    const updatedFiles = files.filter((file) => file.name !== fileName);
+    setFiles(updatedFiles);
+  };
+
+  useEffect(() => {
+    const totalPages = Math.ceil(files.length / filesPerPage);
+    setTotalPages(totalPages);
+  }, [files.length, filesPerPage]);
+
+   // Filter and paginate files based on search term and sort option
+   const filteredFiles = files.filter((file) =>
+    file.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const indexOfLastFile = currentPage * filesPerPage;
+  const indexOfFirstFile = indexOfLastFile - filesPerPage;
+  const paginatedFiles = filteredFiles.slice(indexOfFirstFile, indexOfLastFile);
+
+
   return (
     <Layout>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-      <p>this is content one: Pufferfish</p>
-      </div>
+      <div className="pufferfish">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h1 className="text-black text-4xl">File Upload</h1>
+          <div className="mt-4">
+            <button
+              className="bg-black hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+              onClick={handleFileUpload}
+              disabled={isUploading}
+            >
+              <CloudUploadIcon className="w-5 h-5 mr-2 text-F2EEE3" />
+              Upload files
+            </button>
+          </div>
+        </div>
 
-      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
-        <p>this is content two: Pufferfish</p>
+        <div {...getRootProps({ style })}>
+          <input {...getInputProps()} />
+          <p>Drag and drop files here, or click to select files</p>
+        </div>
+
+        {isUploading ? (
+          <div style={{ margin: '2rem 0rem', background: 'white' }}>
+            <div style={{ padding: '2rem 2rem', boxShadow: '0 0 10px rgba(0, 0, 0, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 style={{ padding: '1rem 0rem' }}>Uploading files ....</h2>
+                <button onClick={handleClose} className="text-gray-500 hover:text-black">
+                  <XIcon className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="mb-8" style={{ background: '#F2EEE3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="bg-light relative h-4 w-full rounded-2xl">
+                  <div className="bg-black absolute top-0 left-0 flex h-full items-center justify-center rounded-2xl text-xs font-semibold text-white" style={{ width: `${overallProgress}%` }}>
+                    {overallProgress}%
+                  </div>
+                </div>
+              </div>
+              <h2>{currentFile && `Uploading: ${currentFile.name}`}</h2>
+            </div>
+          </div>
+        ) : (
+          <div style={{ margin: '2rem 0rem', background: 'white', position: 'relative' }}>
+
+            <div style={{ padding: '2rem 2rem', boxShadow: '0 0 10px rgba(0, 0, 0, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 className='text-black'>Upload successfully! <CheckIcon className="h-8 w-8 text-green-500 mt-4 inline-block" /></h2>
+                <button onClick={handleClose} className="text-gray-500 hover:text-black">
+                  <XIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showFiles && (
+
+          <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+            <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
+              Files Uploaded
+            </h4>
+
+            {files.length > 0 && !isUploading && (
+              <div className="mt-4">
+                <div className="flex flex-row justify-between">
+                  <div className="flex items-center mb-4">
+                    <div className="mr-2">Sort:</div>
+                    <select
+                      value={sortOption}
+                      onChange={handleSortOption}
+                      className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring focus:border-blue-500"
+                    >
+                      <option value="all">All</option>
+                      <option value="image">Image</option>
+                      <option value="video">Video</option>
+                      <option value="document">Document</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center mb-4">
+                    <label htmlFor="search" className="block text-sm font-medium text-gray-700 mr-2">
+                      Search:
+                    </label>
+                    <input
+                      type="text"
+                      id="search"
+                      value={searchTerm}
+                      onChange={handleSearch}
+                      placeholder="Search..."
+                      className="border border-gray-300 px-2 py-1 rounded-md focus:outline-none focus:ring focus:border-blue-500"
+                    />
+
+
+                  </div>
+                </div>
+
+                <div className="max-w-full overflow-x-auto">
+                  <table className="w-full table-auto">
+                    <thead>
+                      <tr className="bg-gray-2 text-left dark:bg-meta-4">
+                        <th className="min-w-[220px] py-4 px-4 font-medium text-black dark:text-white xl:pl-11">
+                          Name
+                        </th>
+                        <th className="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">
+                          File Type
+                        </th>
+                        <th className="min-w-[120px] py-4 px-4 font-medium text-black dark:text-white">
+                          Date Uploaded
+                        </th>
+                        <th className="py-4 px-4 font-medium text-black dark:text-white">
+                          Metadata
+                        </th>
+                        <th className="py-4 px-4 font-medium text-black dark:text-white">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedFiles.map((file, index) => (
+                        <tr key={index}>
+                          <td className="border-b border-[#eee] py-5 px-4 pl-9 dark:border-strokedark xl:pl-11">
+                            <h5 className="font-medium text-black dark:text-white">
+                              {file.name}
+                            </h5>
+
+                          </td>
+                          <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+                            <p className="text-black dark:text-white">{file.type}</p>
+                          </td>
+                          <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+                            <p className="inline-flex rounded-full bg-success bg-opacity-10 py-1 px-3 text-sm font-medium text-success">
+                              {new Date(file.lastModified).toLocaleDateString()}
+                            </p>
+                          </td>
+                          <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+                            <p className="inline-flex rounded-full bg-success bg-opacity-10 py-1 px-3 text-sm font-medium text-success">
+                              View
+                            </p>
+                          </td>
+
+                          <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+                            <div className="flex items-center space-x-3.5">
+                              <button className="hover:text-primary" onClick={() => handleDelete(file.name)}>
+                                <svg
+                                  className="text-black"
+                                  style={{ fill: '#164A1A' }}
+                                  width="18"
+                                  height="18"
+                                  viewBox="0 0 18 18"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M13.7535 2.47502H11.5879V1.9969C11.5879 1.15315 10.9129 0.478149 10.0691 0.478149H7.90352C7.05977 0.478149 6.38477 1.15315 6.38477 1.9969V2.47502H4.21914C3.40352 2.47502 2.72852 3.15002 2.72852 3.96565V4.8094C2.72852 5.42815 3.09414 5.9344 3.62852 6.1594L4.07852 15.4688C4.13477 16.6219 5.09102 17.5219 6.24414 17.5219H11.7004C12.8535 17.5219 13.8098 16.6219 13.866 15.4688L14.3441 6.13127C14.8785 5.90627 15.2441 5.3719 15.2441 4.78127V3.93752C15.2441 3.15002 14.5691 2.47502 13.7535 2.47502ZM7.67852 1.9969C7.67852 1.85627 7.79102 1.74377 7.93164 1.74377H10.0973C10.2379 1.74377 10.3504 1.85627 10.3504 1.9969V2.47502H7.70664V1.9969H7.67852ZM4.02227 3.96565C4.02227 3.85315 4.10664 3.74065 4.24727 3.74065H13.7535C13.866 3.74065 13.9785 3.82502 13.9785 3.96565V4.8094C13.9785 4.9219 13.8941 5.0344 13.7535 5.0344H4.24727C4.13477 5.0344 4.02227 4.95002 4.02227 4.8094V3.96565ZM11.7285 16.2563H6.27227C5.79414 16.2563 5.40039 15.8906 5.37227 15.3844L4.95039 6.2719H13.0785L12.6566 15.3844C12.6004 15.8625 12.2066 16.2563 11.7285 16.2563Z"
+                                    fill=""
+                                  />
+                                  <path
+                                    d="M9.00039 9.11255C8.66289 9.11255 8.35352 9.3938 8.35352 9.75942V13.3313C8.35352 13.6688 8.63477 13.9782 9.00039 13.9782C9.33789 13.9782 9.64727 13.6969 9.64727 13.3313V9.75942C9.64727 9.3938 9.33789 9.11255 9.00039 9.11255Z"
+                                    fill=""
+                                  />
+                                  <path
+                                    d="M11.2502 9.67504C10.8846 9.64692 10.6033 9.90004 10.5752 10.2657L10.4064 12.7407C10.3783 13.0782 10.6314 13.3875 10.9971 13.4157C11.0252 13.4157 11.0252 13.4157 11.0533 13.4157C11.3908 13.4157 11.6721 13.1625 11.6721 12.825L11.8408 10.35C11.8408 9.98442 11.5877 9.70317 11.2502 9.67504Z"
+                                    fill=""
+                                  />
+                                  <path
+                                    d="M6.72245 9.67504C6.38495 9.70317 6.1037 10.0125 6.13182 10.35L6.3287 12.825C6.35683 13.1625 6.63808 13.4157 6.94745 13.4157C6.97558 13.4157 6.97558 13.4157 7.0037 13.4157C7.3412 13.3875 7.62245 13.0782 7.59433 12.7407L7.39745 10.2657C7.39745 9.90004 7.08808 9.64692 6.72245 9.67504Z"
+                                    fill=""
+                                  />
+                                </svg>
+                              </button>
+                              <button className="hover:text-primary">
+                                <svg
+                                  className="text-black"
+                                  style={{ fill: '#164A1A' }}
+                                  width="18"
+                                  height="18"
+                                  viewBox="0 0 18 18"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M16.8754 11.6719C16.5379 11.6719 16.2285 11.9531 16.2285 12.3187V14.8219C16.2285 15.075 16.0316 15.2719 15.7785 15.2719H2.22227C1.96914 15.2719 1.77227 15.075 1.77227 14.8219V12.3187C1.77227 11.9812 1.49102 11.6719 1.12539 11.6719C0.759766 11.6719 0.478516 11.9531 0.478516 12.3187V14.8219C0.478516 15.7781 1.23789 16.5375 2.19414 16.5375H15.7785C16.7348 16.5375 17.4941 15.7781 17.4941 14.8219V12.3187C17.5223 11.9531 17.2129 11.6719 16.8754 11.6719Z"
+                                    fill=""
+                                  />
+                                  <path
+                                    d="M8.55074 12.3469C8.66324 12.4594 8.83199 12.5156 9.00074 12.5156C9.16949 12.5156 9.31012 12.4594 9.45074 12.3469L13.4726 8.43752C13.7257 8.1844 13.7257 7.79065 13.5007 7.53752C13.2476 7.2844 12.8539 7.2844 12.6007 7.5094L9.64762 10.4063V2.1094C9.64762 1.7719 9.36637 1.46252 9.00074 1.46252C8.66324 1.46252 8.35387 1.74377 8.35387 2.1094V10.4063L5.40074 7.53752C5.14762 7.2844 4.75387 7.31252 4.50074 7.53752C4.24762 7.79065 4.27574 8.1844 4.50074 8.43752L8.55074 12.3469Z"
+                                    fill=""
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div className="pagination">
+                    {currentPage !== 1 && (
+                      <button className="prev-button" onClick={() => setCurrentPage(currentPage - 1)}>
+                        Prev
+                      </button>
+                    )}
+                    {currentPage !== totalPages && (
+                      <button className="next-button" onClick={() => setCurrentPage(currentPage + 1)}>
+                        Next
+                      </button>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+
+        {/*         {showFiles && (
+          <div className="file-list">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search files..."
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+            <select className="sort-select" value={sortOption} onChange={handleSortOption}>
+              <option value="all">All</option>
+              <option value="image">Image</option>
+              <option value="video">Video</option>
+              <option value="document">Document</option>
+            </select>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>File Name</th>
+                  <th>File Type</th>
+                  <th>File Size</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedFiles.map((file, index) => (
+                  <tr key={index}>
+                    <td>{file.name}</td>
+                    <td>{file.type}</td>
+                    <td>{file.size} bytes</td>
+                    <td>
+                      <button className="delete-button" onClick={() => handleDelete(file.name)}>
+                        <XIcon className="delete-icon" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="pagination">
+              {currentPage !== 1 && (
+                <button className="prev-button" onClick={() => setCurrentPage(currentPage - 1)}>
+                  Prev
+                </button>
+              )}
+              {currentPage !== totalPages && (
+                <button className="next-button" onClick={() => setCurrentPage(currentPage + 1)}>
+                  Next
+                </button>
+              )}
+            </div>
+          </div>
+        )} */}
       </div>
     </Layout>
   );
 };
+
+
+
+
 
 export default Project;

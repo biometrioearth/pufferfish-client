@@ -1,18 +1,14 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 import './index.css'
-import Pufferfish from "./components/Pufferfish";
-import Project from "./components/Project";
-import Landscape from "./components/Landscape";
+import FileUpload from "./components/FileUpload";
 
 
 function App() {
   return (
     <div>
       <Routes>
-        <Route path="/" element={<Pufferfish />} />
-        <Route path="/project" element={<Project />} />
-        <Route path="/landscape" element={<Landscape />} />
+        <Route path="/" element={<FileUpload />} />
       </Routes>
     </div>
   );

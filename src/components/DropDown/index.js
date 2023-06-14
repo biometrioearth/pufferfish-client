@@ -1,18 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
-const ProjectModal = ({ projectList, toggleDropdown, selectedProject, isDropdownOpen, selectProject }) => {
- /*  const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState('');
-
-  const toggleDropdown = () => {
-    setDropdownOpen(!isDropdownOpen);
-  };
-
-  const selectProject = (project) => {
-    setSelectedProject(project);
-    setDropdownOpen(false);
-  }; */
+const Modal = ({ projectList, toggleDropdown, selectedProject, isDropdownOpen, selectProject }) => {
 
   return (
     <div className="relative">
@@ -53,7 +42,7 @@ const ProjectModal = ({ projectList, toggleDropdown, selectedProject, isDropdown
   );
 };
 
-ProjectModal.propTypes = {
+Modal.propTypes = {
   projectList: PropTypes.arrayOf(PropTypes.string).isRequired,
   selectProject:PropTypes.func,
   toggleDropdown:PropTypes.func,
@@ -61,4 +50,4 @@ ProjectModal.propTypes = {
   isDropdownOpen:PropTypes.bool,
 };
 
-export default ProjectModal;
+export default Modal;

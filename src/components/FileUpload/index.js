@@ -9,6 +9,7 @@ import ButtonGroup from '../ButtonGroup';
 import Pagination from '../Pagination';
 import { projectList } from '../config';
 import ListTable from '../ListTable';
+import SelectProjectForm from '../SelectProjectForm';
 
 
 const baseStyle = {
@@ -186,138 +187,150 @@ const FileUpload = () => {
   const indexOfFirstFile = indexOfLastFile - filesPerPage;
   const currentFiles = sortedFiles.slice(indexOfFirstFile, indexOfLastFile);
 
+
   return (
     <div className=''>
-      <main className="mx-auto max-w-6xl px-4 pt-8">
-        <DropDown
-          projectList={projectList}
-          selectProject={selectProject}
-          toggleDropdown={toggleDropdown}
-          selectedProject={selectedProject || "Select project"}
-          isDropdownOpen={isDropdownOpen} />
+      <main className="mx-auto max-w-6xl px-4 pt-8 flex-col flex">
 
-
-        <div className='mt-5 mb-5'>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h1 className="text-black text-xl">File Upload</h1>
-            <div className="mt-4">
-              <button
-                className="bg-black hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
-                onClick={handleFileUpload}
-                disabled={isUploading}
-              >
-                <CloudUploadIcon className="w-5 h-5 mr-2 text-F2EEE3" />
-                Upload files
-              </button>
-            </div>
+        <div className='flex flex-row justify-between w-full'>
+          <div>
+            <SelectProjectForm />
           </div>
 
-        </div>
-        <div
-          {...getRootProps({ style })}
-          className="p-4 border-2 border-gray-300 border-dashed rounded-md"
-        >
-          <input {...getInputProps()} style={{ zIndex: '-1' }} />
-          {isDragActive ? (
-            <p className="text-gray-600 text-center">Drop the files here...</p>
-          ) : (
-            <p className="text-gray-600">
-              Drag and drop some files here, or click to select files
-            </p>
-          )}
-        </div>
+          <div>
+            {/* <DropDown
+              projectList={projectList}
+              selectProject={selectProject}
+              toggleDropdown={toggleDropdown}
+              selectedProject={selectedProject || "Select project"}
+              isDropdownOpen={isDropdownOpen} /> */}
 
-        {isUploading !== null && (
-          <>
-            {isUploading ? (
-              <div style={{ margin: '2rem 0rem', background: 'white' }}>
-                <div style={{ padding: '2rem 2rem', boxShadow: '0 0 10px rgba(0, 0, 0, 0.2)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <h2 style={{ padding: '1rem 0rem' }}>Uploading files ....</h2>
-                    <button onClick={handleClose} className="text-gray-500 hover:text-black">
-                      <XIcon className="h-5 w-5" />
-                    </button>
+
+            <div className='mt-5 mb-5'>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h1 className="text-black text-xl">File Upload</h1>
+                <div className="mt-4">
+                  <button
+                    className="bg-black hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+                    onClick={handleFileUpload}
+                    disabled={isUploading}
+                  >
+                    <CloudUploadIcon className="w-5 h-5 mr-2 text-F2EEE3" />
+                    Upload files
+                  </button>
+                </div>
+              </div>
+
+            </div>
+            <div
+              {...getRootProps({ style })}
+              className="p-4 border-2 border-gray-300 border-dashed rounded-md"
+            >
+              <input {...getInputProps()} style={{ zIndex: '-1' }} />
+              {isDragActive ? (
+                <p className="text-gray-600 text-center">Drop the files here...</p>
+              ) : (
+                <p className="text-gray-600">
+                  Drag and drop some files here, or click to select files
+                </p>
+              )}
+            </div>
+
+            {isUploading !== null && (
+              <>
+                {isUploading ? (
+                  <div style={{ margin: '2rem 0rem', background: 'white' }}>
+                    <div style={{ padding: '2rem 2rem', boxShadow: '0 0 10px rgba(0, 0, 0, 0.2)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <h2 style={{ padding: '1rem 0rem' }}>Uploading files ....</h2>
+                        <button onClick={handleClose} className="text-gray-500 hover:text-black">
+                          <XIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                      <div className="mb-8" style={{ background: '#F2EEE3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="bg-light relative h-4 w-full rounded-2xl">
+                          <div className="bg-black absolute top-0 left-0 flex h-full items-center justify-center rounded-2xl text-xs font-semibold text-white" style={{ width: `${overallProgress}%` }}>
+                            {overallProgress}%
+                          </div>
+                        </div>
+                      </div>
+                      <h2>{currentFile && `Uploading: ${currentFile.name}`}</h2>
+                    </div>
                   </div>
-                  <div className="mb-8" style={{ background: '#F2EEE3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="bg-light relative h-4 w-full rounded-2xl">
-                      <div className="bg-black absolute top-0 left-0 flex h-full items-center justify-center rounded-2xl text-xs font-semibold text-white" style={{ width: `${overallProgress}%` }}>
-                        {overallProgress}%
+                ) : (
+                  <div style={{ margin: '2rem 0rem', background: 'white', position: 'relative' }}>
+
+                    <div style={{ padding: '2rem 2rem', boxShadow: '0 0 10px rgba(0, 0, 0, 0.2)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <h2>Upload complete <CheckIcon className="h-8 w-8 text-green-500 mt-4 inline-block" /></h2>
+                        <button onClick={handleClose} className="text-gray-500 hover:text-black">
+                          <XIcon className="h-5 w-5" />
+                        </button>
                       </div>
                     </div>
                   </div>
-                  <h2>{currentFile && `Uploading: ${currentFile.name}`}</h2>
-                </div>
-              </div>
-            ) : (
-              <div style={{ margin: '2rem 0rem', background: 'white', position: 'relative' }}>
+                )}
 
-                <div style={{ padding: '2rem 2rem', boxShadow: '0 0 10px rgba(0, 0, 0, 0.2)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <h2>Upload complete <CheckIcon className="h-8 w-8 text-green-500 mt-4 inline-block" /></h2>
-                    <button onClick={handleClose} className="text-gray-500 hover:text-black">
-                      <XIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-          </>
-        )}
-
-        {showFiles && (
-          <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1" style={{ marginBottom: '10rem' }}>
-            <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-              Files Uploaded
-            </h4>
-
-            {files.length > 0 && !isUploading && (
-              <div className="mt-4" >
-                <div className="flex flex-col md:flex-row justify-between" style={{ padding: '2rem 0rem' }}>
-                  <div className="flex items-center mb-4 md:mb-0">
-                    <ButtonGroup
-                      options={[
-                        { value: 'all', label: 'View All' },
-                        { value: 'recent', label: 'Most Recent' },
-                        { value: 'older', label: 'Older Files' },
-                      ]}
-                      selectedOption={sortOption}
-                      onChange={handleSortOption}
-                    />
-                  </div>
-
-                  <div className="flex flex-col items-start md:flex-row mb-4 md:mb-0">
-                    <label htmlFor="search" className="block text-md font-medium text-black mr-2">
-                      Search
-                    </label>
-                    <input
-                      type="text"
-                      id="search"
-                      className="p-2 border border-black rounded-md"
-                      value={searchTerm}
-                      onChange={handleSearch}
-                    />
-                  </div>
-                </div>
-                <Filter />
-                <ListTable
-                  currentFiles={currentFiles}
-                  onClick={openModal}
-                  handleDelete={handleDelete}
-                  selectedProject={selectedProject} />
-                <div className="flex justify-end mt-4">
-                  {totalPages > 1 && (
-                    <Pagination
-                      totalPages={totalPages}
-                      currentPage={currentPage}
-                      onPageChange={handlePageChange}
-                    />
-                  )}
-                </div>
-              </div>
+              </>
             )}
           </div>
-        )}
+        </div>
+
+        <div>
+          {showFiles && (
+            <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1" style={{ marginBottom: '10rem' }}>
+              <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
+                Files Uploaded
+              </h4>
+
+              {files.length > 0 && !isUploading && (
+                <div className="mt-4" >
+                  <div className="flex flex-col md:flex-row justify-between" style={{ padding: '2rem 0rem' }}>
+                    <div className="flex items-center mb-4 md:mb-0">
+                      <ButtonGroup
+                        options={[
+                          { value: 'all', label: 'View All' },
+                          { value: 'recent', label: 'Most Recent' },
+                          { value: 'older', label: 'Older Files' },
+                        ]}
+                        selectedOption={sortOption}
+                        onChange={handleSortOption}
+                      />
+                    </div>
+
+                    <div className="flex flex-col items-start md:flex-row mb-4 md:mb-0">
+                      <label htmlFor="search" className="block text-md font-medium text-black mr-2">
+                        Search
+                      </label>
+                      <input
+                        type="text"
+                        id="search"
+                        className="p-2 border border-black rounded-md"
+                        value={searchTerm}
+                        onChange={handleSearch}
+                      />
+                    </div>
+                  </div>
+                  <Filter />
+                  <ListTable
+                    currentFiles={currentFiles}
+                    onClick={openModal}
+                    handleDelete={handleDelete}
+                    selectedProject={selectedProject} />
+                  <div className="flex justify-end mt-4">
+                    {totalPages > 1 && (
+                      <Pagination
+                        totalPages={totalPages}
+                        currentPage={currentPage}
+                        onPageChange={handlePageChange}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </main>
       <footer className="text-black text-center py-4" style={{ margin: "3rem 0rem" }}>
         &copy; 2023 Biometrio. All rights reserved.

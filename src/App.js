@@ -3,7 +3,6 @@ import { Route, Routes } from "react-router-dom";
 import './index.css'
 import FileUpload from "./components/FileUpload";
 
-
 function App() {
   return (
     <div>

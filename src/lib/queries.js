@@ -4,7 +4,12 @@ const GET_PROJECTS =  gql`{
   allProjects{
     items {
       id
-      title
+      title,
+      samplingPointArea{
+        items{
+          id
+        }
+      }
     }
   }
 }`;

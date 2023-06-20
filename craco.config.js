@@ -1,7 +1,6 @@
 const { ModuleFederationPlugin } = require("webpack").container;
 
 module.exports = {
-  mode: 'development',
   devServer: {
     port: 3001,
   },
@@ -9,7 +8,7 @@ module.exports = {
     plugins: {
       add: [
         new ModuleFederationPlugin({
-          name: "pufferfish",
+          name: "pufferfishclient",
           exposes: {
             "./App": "./src/App",
           },

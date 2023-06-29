@@ -13,6 +13,7 @@
     "apollo-cache-inmemory": "^1.6.6",
     "apollo-client": "^2.6.10",
     "apollo-link-ws": "^1.0.20",
+    "aws-sdk": "^2.1404.0",
     "axios": "^1.4.0",
     "craco-module-federation": "^1.1.0",
     "formik": "^2.4.1",

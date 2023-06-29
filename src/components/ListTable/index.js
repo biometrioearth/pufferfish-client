@@ -2,6 +2,26 @@ import React from 'react'
 
 const ListTable = ({ currentFiles, onClick, selectedProject, handleDelete }) => {
 
+  const getFileType = (fileName) => {
+    const fileExtension = fileName.split('.').pop();
+    // Add more file type mappings as needed
+    switch (fileExtension) {
+      case 'pdf':
+        return 'PDF';
+      case 'jpg':
+        return 'jpg';
+      case 'jpeg':
+        return 'jpef';
+      case 'png':
+        return 'png';
+      case 'txt':
+        return 'Text';
+      default:
+        return 'Unknown';
+    }
+  };
+
+
   return (
     <div className="max-w-full overflow-x-auto">
     <table className="w-full table-auto">
@@ -14,7 +34,10 @@ const ListTable = ({ currentFiles, onClick, selectedProject, handleDelete }) => 
             File Type
           </th>
           <th className="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">
-            Size
+            Size(Bytes)
+          </th>
+          <th className="py-4 px-4 font-medium text-black dark:text-white">
+            Directory
           </th>
 
           <th className="min-w-[120px] py-4 px-4 font-medium text-black dark:text-white">
@@ -35,32 +58,44 @@ const ListTable = ({ currentFiles, onClick, selectedProject, handleDelete }) => 
           <tr key={index}>
             <td className="border-b border-[#eee] py-5 px-4 pl-9 dark:border-strokedark xl:pl-11">
               <h5 className="font-medium text-black dark:text-white">
-                {file.name}
+                {file.Key.split('/').pop()}
               </h5>
-
             </td>
             <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-              <p className="text-black dark:text-white">{file.type}</p>
+              <p className="text-black dark:text-white">{getFileType(file.Key.split('/').pop())}</p>
             </td>
             <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-              <p className="text-black dark:text-white">{file.size}</p>
+              <p className="text-black dark:text-white">{file.Size + 'B'}</p>
+            </td>
+            <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+              <p className="text-black dark:text-white">{file.Key.split('/').slice(0, -1).join('/')}</p>
             </td>
 
-
-            <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-              <p className="inline-flex rounded-full bg-success bg-opacity-10 py-1 px-3 text-sm font-medium text-success">
-                {new Date(file.lastModified).toLocaleDateString()}
+             <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+              <p className="text-black dark:text-white">
+              {file.LastModified.toString()}
               </p>
             </td>
             <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-              <button onClick={onClick} className="inline-flex rounded-full bg-success bg-opacity-10 py-1 px-3 text-sm font-medium text-success">
+              <button onClick={onClick} className="text-black dark:text-white">
                 {selectedProject}
               </button>
             </td>
 
+           {/*  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+              <p className="inline-flex rounded-full bg-success bg-opacity-10 py-1 px-3 text-sm font-medium text-success text-black dark:text-white">
+              {file.LastModified.toString()}
+              </p>
+            </td>
+            <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+              <button onClick={onClick} className="inline-flex rounded-full bg-success bg-opacity-10 py-1 px-3 text-sm font-medium text-success text-black dark:text-white">
+                {selectedProject}
+              </button>
+            </td> */}
+
             <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
               <div className="flex items-center space-x-3.5">
-                <button className="hover:text-primary" onClick={() => handleDelete(index)}>
+                <button className="hover:text-primary" onClick={() => handleDelete(file.Key)}>
                   <svg
                     className="text-black"
                     style={{ fill: '#164A1A' }}

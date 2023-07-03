@@ -83,6 +83,18 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   const [itemsPerPage] = useState(10); // Number of items to display per page
   const [totalPages, setTotalPages] = useState(1);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState('');
+
+  const handleViewImage = (imageUrl) => {
+    showModal({ imageUrl });
+  };
+
+  const showModal = ({ imageUrl }) => {
+    setModalImageUrl(imageUrl);
+    setModalOpen(true);
+  };
+
 
   useEffect(() => {
     fetchBucketObjects();
@@ -470,6 +482,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
             selectedProject={selectedProject}
             handleDelete={handleDelete}
             handleFileDownload={handleFileDownload}
+            handleViewImage={handleViewImage}
             currentFiles={currentItems}
             {...props}
           />
@@ -484,6 +497,43 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal */}
+    {/*   <div className={`fixed inset-0 flex items-center justify-center z-50 ${modalOpen ? 'block' : 'hidden'}`}>
+        <div className="modal-overlay absolute inset-0 bg-black opacity-75"></div>
+        <div className="modal-content bg-white p-4">
+          <img src={modalImageUrl} alt="Preview" className="max-w-full max-h-full" />
+        </div>
+        <button className="modal-close absolute top-0 right-0 mt-4 mr-4 text-white" onClick={() => setModalOpen(false)}>
+          <svg className="fill-current text-white" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+            <path
+              d="M17.293 15.293L12.586 10.586L17.293 5.879C17.683 5.488 17.683 4.854 17.293 4.464C16.902 4.073 16.268 4.073 15.879 4.464L11.172 9.172L6.464 4.464C6.073 4.073 5.439 4.073 5.049 4.464C4.659 4.854 4.659 5.488 5.049 5.879L9.757 10.586L5.049 15.293C4.659 15.683 4.659 16.317 5.049 16.707C5.439 17.098 6.073 17.098 6.464 16.707L11.172 12L15.879 16.707C16.268 17.098 16.902 17.098 17.293 16.707C17.683 16.317 17.683 15.683 17.293 15.293Z"
+            />
+          </svg>
+        </button>
+      </div> */}
+
+       {/* Modal */}
+       {modalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="modal-overlay fixed inset-0 bg-black opacity-75"></div>
+          <div className="modal-content bg-white p-4 mx-auto max-w-lg">
+            <img src={modalImageUrl} alt="Preview" className="max-w-full max-h-full" />
+            <button
+              className="absolute top-4 right-4 text-white rounded-full bg-black opacity-75 p-2"
+              onClick={() => setModalOpen(false)}
+            >
+              <svg className="w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                  d="M17.3 15.3L12 10.6L6.7 15.3C6.3 15.7 5.7 15.7 5.3 15.3C4.9 14.9 4.9 14.3 5.3 13.9L10.6 9.2L5.3 4.5C4.9 4.1 4.9 3.5 5.3 3.1C5.7 2.7 6.3 2.7 6.7 3.1L12 7.8L17.3 3.1C17.7 2.7 18.3 2.7 18.7 3.1C19.1 3.5 19.1 4.1 18.7 4.5L13.4 9.2L18.7 13.9C19.1 14.3 19.1 14.9 18.7 15.3C18.3 15.7 17.7 15.7 17.3 15.3Z"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 };

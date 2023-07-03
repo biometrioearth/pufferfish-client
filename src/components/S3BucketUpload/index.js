@@ -1,12 +1,36 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { XIcon } from '@heroicons/react/solid';
-import { CloudUploadIcon } from '@heroicons/react/outline';
+import { CloudUploadIcon, DownloadIcon } from '@heroicons/react/outline';
 import AWS from 'aws-sdk';
 import ListTable from '../ListTable';
 import ButtonGroup from '../ButtonGroup';
 import Pagination from '../Pagination';
 import axios from 'axios';
+
+import { saveAs } from 'file-saver';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+
+const getFileType = (fileName) => {
+  const fileExtension = fileName.split('.').pop();
+  // Add more file type mappings as needed
+  switch (fileExtension) {
+    case 'pdf':
+      return 'PDF';
+    case 'jpg':
+      return 'jpg';
+    case 'jpeg':
+      return 'jpef';
+    case 'png':
+      return 'png';
+    case 'txt':
+      return 'Text';
+    default:
+      return 'Unknown';
+  }
+};
+
 
 // Set your AWS S3 bucket configuration
 AWS.config.update({
@@ -58,6 +82,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Number of items to display per page
   const [totalPages, setTotalPages] = useState(1);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     fetchBucketObjects();
@@ -78,6 +103,24 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
       fetchBucketObjects(); // Fetch updated bucket objects after deletion
     } catch (error) {
       console.error('Error deleting file:', error);
+    }
+  };
+
+  const handleFileDownload = async (key) => {
+    try {
+      const response = await s3.getObject({ Bucket: process.env.REACT_APP_BUCKET, Key: key }).promise();
+
+      const blob = new Blob([response.Body], { type: response.ContentType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', key.split('/').pop());
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
     }
   };
 
@@ -212,6 +255,60 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   };
   console.log("this is the uploading state", isUploading)
 
+  const downloadPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4'); // 'l' stands for landscape orientation
+    const tableData = sortedObjects.map((object) => [
+      object.Key.split('/').pop(),
+      getFileType(object.Key.split('/').pop()),
+      object.Size + 'B',
+      object.Key.split('/').slice(0, -1).join('/'),
+      object.LastModified.toString(),
+      selectedProject
+    ]);
+    const columnHeaders = ['File Name', 'File Type', 'Size(Bytes)', 'Directory', 'Last Modified', 'Project'];
+    const columnWidths = [40, 30, 30, 60, 45, 45]; // Adjust the widths as needed
+
+    doc.autoTable({
+      head: [columnHeaders],
+      body: tableData,
+      columnStyles: {
+        0: { cellWidth: columnWidths[0] },
+        1: { cellWidth: columnWidths[1] },
+        2: { cellWidth: columnWidths[2] },
+        3: { cellWidth: columnWidths[3] },
+        4: { cellWidth: columnWidths[4] },
+        5: { cellWidth: columnWidths[5] },
+      },
+    });
+    doc.save('uploaded-data.pdf');
+  };
+
+  const downloadCSV = () => {
+    const csvContent = [
+      ['File Name', 'File Type', 'Size(Bytes)', 'Directory', 'Last Modified', 'Project'],
+      ...sortedObjects.map((object) => [
+        object.Key.split('/').pop(),
+        getFileType(object.Key.split('/').pop()),
+        object.Size + 'B',
+        object.Key.split('/').slice(0, -1).join('/'),
+        object.LastModified.toString(),
+        selectedProject
+      ]),
+    ]
+      .map((row) => row.join(','))
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    saveAs(blob, 'uploaded-data.csv');
+  };
+
+  const handleDownload = (format) => {
+    if (format === 'pdf') {
+      downloadPDF();
+    } else if (format === 'csv') {
+      downloadCSV();
+    }
+  };
+
   return (
     <div className="h-100">
       <div className="mt-5 mb-5">
@@ -326,9 +423,53 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
             </div>
           </div>
 
+          <div className="relative inline-block text-left">
+            <div>
+              <button
+                type="button"
+                className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                id="options-menu"
+                aria-haspopup="true"
+                aria-expanded="true"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                Download <DownloadIcon className="w-5 h-5 ml-2 -mr-1" aria-hidden="true" />
+              </button>
+            </div>
+            {dropdownOpen && (
+              <div
+                className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="options-menu"
+              >
+                <div className="py-1" role="none">
+                  <button
+                    className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    role="menuitem"
+                    onClick={() => handleDownload('pdf')}
+                  >
+                    Download as PDF
+                  </button>
+                  <button
+                    className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    role="menuitem"
+                    onClick={() => handleDownload('csv')}
+                  >
+                    Download as CSV
+                  </button>
+                </div>
+              </div>
+            )}
+
+
+          </div>
+
+
           <ListTable
             selectedProject={selectedProject}
             handleDelete={handleDelete}
+            handleFileDownload={handleFileDownload}
             currentFiles={currentItems}
             {...props}
           />

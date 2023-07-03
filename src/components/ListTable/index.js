@@ -1,6 +1,6 @@
 import React from 'react'
 
-const ListTable = ({ currentFiles, onClick, selectedProject, handleDelete }) => {
+const ListTable = ({ currentFiles, onClick, handleFileDownload, selectedProject, handleDelete }) => {
 
   const getFileType = (fileName) => {
     const fileExtension = fileName.split('.').pop();
@@ -20,7 +20,6 @@ const ListTable = ({ currentFiles, onClick, selectedProject, handleDelete }) => 
         return 'Unknown';
     }
   };
-
 
   return (
     <div className="max-w-full overflow-x-auto">
@@ -123,7 +122,7 @@ const ListTable = ({ currentFiles, onClick, selectedProject, handleDelete }) => 
                     />
                   </svg>
                 </button>
-                <button className="hover:text-primary">
+                <button className="hover:text-primary" onClick={() => handleFileDownload(file.Key)}>
                   <svg
                     className="text-black"
                     style={{ fill: '#164A1A' }}

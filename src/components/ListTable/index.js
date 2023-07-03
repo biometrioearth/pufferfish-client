@@ -54,7 +54,7 @@ const ListTable = ({ currentFiles, onClick, selectedProject, handleDelete }) => 
 
 
       <tbody>
-        {currentFiles.map((file, index) => (
+        {currentFiles?.map((file, index) => (
           <tr key={index}>
             <td className="border-b border-[#eee] py-5 px-4 pl-9 dark:border-strokedark xl:pl-11">
               <h5 className="font-medium text-black dark:text-white">

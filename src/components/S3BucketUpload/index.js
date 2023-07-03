@@ -6,9 +6,9 @@ import AWS from 'aws-sdk';
 import ListTable from '../ListTable';
 import ButtonGroup from '../ButtonGroup';
 import Pagination from '../Pagination';
+import axios from 'axios';
 
 // Set your AWS S3 bucket configuration
-
 AWS.config.update({
   accessKeyId: process.env.REACT_APP_A_K,
   secretAccessKey: process.env.REACT_APP_S_K,
@@ -58,7 +58,6 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Number of items to display per page
   const [totalPages, setTotalPages] = useState(1);
-
 
   useEffect(() => {
     fetchBucketObjects();
@@ -144,9 +143,22 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
         setCurrentFile(file);
         const fileUrl = await uploadFile(file);
         console.log('Uploaded file URL:', fileUrl);
+
+        // Send POST request to the API for each uploaded file
+        const apiUrl = `https://6pq11i2mul.execute-api.eu-west-1.amazonaws.com/api-sqs/sqs?MessageBody=%7B%22bucket%22%3A%22pufferfish-test%22%2C%22directory_path%22%3A%22data/brenda/final-test-url/2023_05_18-SD1-device1%22%2C%22shortname%22%3A%22sipecam%22%2C%22username%22%3A%22brenda%22%7D`;
+
+        await axios.post(apiUrl, null, {
+          headers: {
+            'Access-Control-Allow-Origin': 'http://localhost:3000',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+            'Access-Control-Allow-Headers': '*',
+          },
+        });
+        await fetchBucketObjects();
       }
+
       setFiles([]);
-      fetchBucketObjects();
+
     } catch (error) {
       console.error('Error uploading files:', error);
     } finally {
@@ -159,10 +171,10 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   const handleSearchChange = (e) => {
     setSearchValue(e.target.value);
   };
+
   const handleSortChange = (value) => {
     setSortOption(value);
   };
-
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -192,6 +204,14 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedObjects.slice(indexOfFirstItem, indexOfLastItem);
 
+  const handleDeleteFile = (index, event) => {
+    event.stopPropagation();
+    const updatedFiles = [...files];
+    updatedFiles.splice(index, 1);
+    setFiles(updatedFiles);
+  };
+  console.log("this is the uploading state", isUploading)
+
   return (
     <div className="h-100">
       <div className="mt-5 mb-5">
@@ -209,16 +229,49 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
           </div>
         </div>
       </div>
+
       <div {...getRootProps({ style })} className="p-4 border-2 border-gray-300 border-dashed rounded-md">
-        <input {...getInputProps()} style={{ zIndex: '-1' }} />
-        {isDragActive ? (
-          <p className="text-gray-600 text-center">Drop the files here...</p>
+        {files?.length > 0 && isUploading === false ? (
+          <div className="flex flex-col items-start w-100">
+            <ul className="mt-2">
+              {files?.map((file, index) => (
+                <li key={index} className="flex items-center">
+                  {file.name}
+                  <button
+                    className="ml-2 text-red-600"
+                    onClick={(event) => handleDeleteFile(index, event)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 1a9 9 0 100 18A9 9 0 0010 1zm0 2a7 7 0 100 14 7 7 0 000-14zm4 6a1 1 0 01-2 0V8.414l-1.293 1.293a1 1 0 11-1.414-1.414L8 7.586 6.707 8.879a1 1 0 01-1.414-1.414L6.586 6 5.293 4.707a1 1 0 011.414-1.414L8 4.586l1.293-1.293a1 1 0 011.414 1.414L9.414 6H11a1 1 0 110 2h-1.586l1.293 1.293a1 1 0 11-1.414 1.414L10 9.414V11a1 1 0 102 0V9.414l1.293 1.293a1 1 0 11-1.414 1.414L11 10.414H9a1 1 0 110-2h1.586L9.293 6.707a1 1 0 111.414-1.414L10 7.586V6a1 1 0 012 0v1.586l1.293-1.293a1 1 0 111.414 1.414L13.414 8H15a1 1 0 110 2h-1.586l1.293 1.293a1 1 0 11-1.414 1.414L12 11.414V13a1 1 0 102 0v-1.586l1.293 1.293a1 1 0 01-1.414 1.414L13.414 12H12a1 1 0 110-2h1.586L12.293 8.707a1 1 0 111.414-1.414L14 9.414V8a1 1 0 012 0v1.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10H18a1 1 0 010 2h-1.586L17.293 12.707a1 1 0 11-1.414 1.414L16 13.414V15a1 1 0 102 0v-1.586l1.293 1.293a1 1 0 11-1.414 1.414L17.414 16H16a1 1 0 110-2h1.586L17.293 12.707a1 1 0 111.414-1.414L19 13.414V12a1 1 0 012 0v1.586l.001-.001A9 9 0 0110 3z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
-          <p className="text-gray-600">
-            Drag and drop some files here, or click to select files
-          </p>
+          <>
+            {isDragActive ? (
+              <p className="text-gray-600 text-center">Drop the files here...</p>
+            ) : (
+              <p className="text-gray-600">
+                Drag and drop some files here, or click to select files
+              </p>
+            )}
+          </>
         )}
+        <input {...getInputProps()} style={{ zIndex: '-1' }} />
       </div>
+
       {isUploading && (
         <div style={{ margin: '2rem 0rem', background: 'white' }}>
           <div style={{ padding: '2rem 2rem', boxShadow: '0 0 10px rgba(0, 0, 0, 0.2)' }}>
@@ -235,7 +288,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
                 </div>
               </div>
             </div>
-            <h2>{currentFile && `Uploading: ${currentFile.name}`}</h2>
+            <h2>{currentFile && `Uploading: ${currentFile?.name}`}</h2>
           </div>
         </div>
       )}
@@ -272,6 +325,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
               />
             </div>
           </div>
+
           <ListTable
             selectedProject={selectedProject}
             handleDelete={handleDelete}
@@ -287,10 +341,9 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
               />
             )}
           </div>
-
         </div>
       </div>
-    </div >
+    </div>
   );
 };
 

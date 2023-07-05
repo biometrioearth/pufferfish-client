@@ -28,6 +28,9 @@ const ListTable = ({ currentFiles, onClick, handleViewImage, handleFileDownload,
         <thead>
           <tr className="bg-gray-2 text-left dark:bg-meta-4">
             <th className="min-w-[220px] py-4 px-4 font-medium text-black dark:text-white xl:pl-11">
+              Thumbnail
+            </th>
+            <th className="min-w-[220px] py-4 px-4 font-medium text-black dark:text-white xl:pl-11">
               Name
             </th>
             <th className="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">
@@ -56,6 +59,9 @@ const ListTable = ({ currentFiles, onClick, handleViewImage, handleFileDownload,
         <tbody>
           {currentFiles?.map((file, index) => (
             <tr key={index}>
+              <td className="border-b border-[#eee] py-5 px-4 pl-9 dark:border-strokedark xl:pl-11">
+                <img src="https://placehold.co/50x50" alt="thumbnail" />
+              </td>
               <td className="border-b border-[#eee] py-5 px-4 pl-9 dark:border-strokedark xl:pl-11">
                 <h5 className="font-medium text-black dark:text-white">
                   {file.Key.split('/').pop()}

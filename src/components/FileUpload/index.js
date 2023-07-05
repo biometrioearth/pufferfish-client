@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { GET_PROJECTS } from '../../lib/queries';
+import { GET_PROJECTS} from '../../lib/queries';
 import { UPDATE_SAMPLING_POINT } from '../../lib/mutation';
 import S3BucketUpload from '../S3BucketUpload';
 
@@ -15,7 +15,7 @@ const FileUpload = () => {
   const [showNestedDropdown, setShowNestedDropdown] = useState(false);
 
   const { loading, error, data } = useQuery(GET_PROJECTS);
-  const [updateSamplingPoint] = useMutation(UPDATE_SAMPLING_POINT);
+  const [updateSamplingPoint, { loading: updateLoading, error: updateError }] = useMutation(UPDATE_SAMPLING_POINT);
 
   const handleProjectChange = (event) => {
     setSelectedProject(event.target.value);
@@ -36,6 +36,14 @@ const FileUpload = () => {
       const { data: updatedData } = await updateSamplingPoint({
         variables: { id: samplingPoint, dateCollected },
       });
+
+      /* const {  data: getProjectInfo } = useQuery(GET_PROJECT_WITH_SAMPLING_POINT, {
+        variables: {
+          id: samplingPoint
+        },
+      }); */
+
+      console.log("sampling point", samplingPoint)
       // Handle the updated data or display a success message if needed
       console.log('Updated Data:', updatedData);
       setResultData(JSON.stringify(updatedData, null, 2));
@@ -57,23 +65,70 @@ const FileUpload = () => {
   };
 
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <div className='container mx-auto max-w-8xl px-4 pt-8 flex-col flex h-100' style={{ height: '100vh' }}>
+      <div className='h-100'>
+        <div className='mx-auto max-w-3xl' style={{ padding: '3rem 0rem' }} id="select-project">
+          <div className='mb-4 w-full flex flex-row' style={{justifyContent:'space-between'}}>
+            <p>Loading pufferfish .....</p>
+            <div
+              class="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
+              role="status">
+              <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    )
   }
 
   if (error) {
-    return <p>Error: {error.message}</p>;
+    return (
+      <div className='container mx-auto max-w-8xl px-4 pt-8 flex-col flex h-100' style={{ height: '100vh' }}>
+        <p>Error: {error.message}</p>;
+      </div>
+    )
   }
 
-  const handleMainDropdownMouseEnter = () => {
-    setShowNestedDropdown(true);
-  };
+  if (updateLoading) {
+    return (
+      <div className='container mx-auto max-w-8xl px-4 pt-8 flex-col flex h-100' style={{ height: '100vh' }}>
+        <div className='h-100'>
+          <div className='mx-auto max-w-3xl' style={{ padding: '3rem 0rem' }} id="select-project">
+            <div className='mb-4 w-full flex flex-row' >
+              <p>Loading file upload...</p>
+              <div
+                class="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
+                role="status">
+                <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-  const handleMainDropdownMouseLeave = () => {
-    setShowNestedDropdown(false);
-  };
-
+if (updateError) {
   return (
-    <div className='container mx-auto max-w-7xl px-4 pt-8 flex-col flex h-100' style={{ height: '100vh' }}>
+    <div className='container mx-auto max-w-8xl px-4 pt-8 flex-col flex h-100' style={{ height: '100vh' }}>
+      <p>Mutation Error: {error.message}</p>;
+    </div>
+  )
+}
+
+const handleMainDropdownMouseEnter = () => {
+  setShowNestedDropdown(true);
+};
+
+const handleMainDropdownMouseLeave = () => {
+  setShowNestedDropdown(false);
+};
+
+return (
+  <div className='container mx-auto max-w-8xl px-4 pt-8 flex-col flex h-100' style={{ height: '100vh' }}>
     <div className='h-100'>
       {uploadSuccess ? (
         selectedProject && (
@@ -100,8 +155,8 @@ const FileUpload = () => {
               </nav>
             </div>
 
-          <S3BucketUpload selectedProject={selectedProject}/>
-        </div>
+            <S3BucketUpload selectedProject={selectedProject} />
+          </div>
         )
       ) : (
         <form className='mx-auto max-w-3xl' style={{ padding: '3rem 0rem' }} id="select-project">
@@ -135,20 +190,20 @@ const FileUpload = () => {
                 ))}
               </select>
               {selectedProject && showNestedDropdown && (
-               <div className="absolute left-0 mt-2 w-full">
-               <div className="w-100">
-                 <ul className="bg-white border border-gray-300 rounded-md shadow-md">
-                   <p className="px-3 py-2 bg-gray-100 border-b border-gray-300 font-bold">Sites</p>
-                   {data.allProjects.items.map((project) => (
-                     selectedProject === project.title && (
-                       project.siteSet.items.map((site) => (
-                         <li key={site.id} className="px-3 py-2">{site.identifier}</li>
-                       ))
-                     )
-                   ))}
-                 </ul>
-               </div>
-             </div>
+                <div className="absolute left-0 mt-2 w-full">
+                  <div className="w-100">
+                    <ul className="bg-white border border-gray-300 rounded-md shadow-md">
+                      <p className="px-3 py-2 bg-gray-100 border-b border-gray-300 font-bold">Sites</p>
+                      {data.allProjects.items.map((project) => (
+                        selectedProject === project.title && (
+                          project.siteSet.items.map((site) => (
+                            <li key={site.id} className="px-3 py-2">{site.identifier}</li>
+                          ))
+                        )
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -184,8 +239,8 @@ const FileUpload = () => {
         </form>
       )}
     </div>
-    </div>
-  );
+  </div>
+);
 };
 
 export default FileUpload;

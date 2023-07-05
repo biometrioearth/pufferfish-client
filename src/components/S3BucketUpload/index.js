@@ -87,7 +87,11 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   const [modalImageUrl, setModalImageUrl] = useState('');
   const [showFileMax, setShowFileMax] = useState(false);
   const [showFileSizeMaxAlert, setShowFileSizeMaxAlert] = useState(false)
+  const [isfetchingSuccess, setIsfetchingSuccess] = useState(false)
+  const [showNoSelectAlert, setShowNoSelectAlert] = useState(false)
 
+
+  console.log("this is the modalImage", modalImageUrl)
   const handleViewImage = (imageUrl) => {
     showModal({ imageUrl });
   };
@@ -106,8 +110,10 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     try {
       const response = await s3.listObjectsV2({ Bucket: process.env.REACT_APP_BUCKET, Prefix: 'data/brenda/final-test-url/2023_05_18-SD1-device1/' }).promise();
       setBucketObjects(response.Contents);
+      setIsfetchingSuccess(true)
     } catch (error) {
       console.error('Error fetching bucket objects:', error);
+      setIsfetchingSuccess(false)
     }
   };
 
@@ -115,8 +121,10 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     try {
       await s3.deleteObject({ Bucket: process.env.REACT_APP_BUCKET, Key: fileName }).promise();
       fetchBucketObjects(); // Fetch updated bucket objects after deletion
+
     } catch (error) {
       console.error('Error deleting file:', error);
+
     }
   };
 
@@ -180,9 +188,9 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     maxFiles: 2,
     validator: fileValidator,
     accept: {
-      'image/*': ['.jpeg', '.png', '.jpg'],
-      'audio/*':['.mpeg','.mpeg3', '.x-mpeg-3', '.wav', '.midi', '.x-midi', '.ogg', '.webm', '.aac'],
-      'video/*':['.mpeg','.mp4', '.ogg', '.mp2t',  '.webm']
+      'image/*': ['.jpeg', '.png', '.jpg', '.gif'],
+      'audio/*': ['.mpeg', '.mpeg3', '.x-mpeg-3', '.wav', '.midi', '.x-midi', '.ogg', '.webm', '.aac'],
+      'video/*': ['.mpeg', '.mp4', '.ogg', '.mp2t', '.webm']
     },
   });
 
@@ -225,7 +233,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   const handleFileUpload = async () => {
     setIsUploading(true);
     if (files?.length === 0) {
-      alert('Please select files to upload');
+      setShowNoSelectAlert(true);
       setIsUploading(false);
       return;
     }
@@ -376,10 +384,28 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
         </div>
       </div>
 
+      {showNoSelectAlert && (
+        <div
+          class="mb-4 rounded-lg bg-danger-100 text-base text-danger-700" role="alert">
+          <div className=" p-6 text-gray-700 flex flex-row " style={{ justifyContent: 'space-between' }}>
+            <p className="font-medium">Please select file/s to upload</p>
+            <button
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none"
+              onClick={() => setShowNoSelectAlert(false)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+
+            </button>
+          </div>
+        </div>
+      )}
+
       {showFileMax && (
         <div
-          class="mb-4 rounded-lg bg-danger-100 px-6 py-5 text-base text-danger-700" role="alert">
-          <div className=" p-6 text-gray-700 flex flex-row justiy-content-between" >
+          class="mb-4 rounded-lg bg-danger-100 text-base text-danger-700" role="alert">
+          <div className=" p-6 text-gray-700 flex flex-row " style={{ justifyContent: 'space-between' }} >
             <p className="font-medium">Max files to upload is 2</p>
             <button
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none"
@@ -397,15 +423,15 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
 
       {showFileSizeMaxAlert && (
         <div
-          class="mb-4 rounded-lg bg-danger-100 px-6 py-5 text-base text-danger-700"
+          class="mb-4 rounded-lg bg-danger-100 text-base text-danger-700"
           role="alert">
-          <div className=" p-6 text-gray-700 flex flex-row" style={{justifyContent: "space-between"}}>
+          <div className=" p-6 text-gray-700 flex flex-row" style={{ justifyContent: "space-between" }}>
             <p> File is more than 30mbs.Please compress it to upload</p>
             <button
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none"
               onClick={() => setShowFileSizeMaxAlert(false)}
             >
-               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
@@ -475,120 +501,103 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
           </div>
         </div>
       )}
+      {!isfetchingSuccess && <div className='mb-10 mt-10'> <p>Loading files...</p></div>}
+      {isfetchingSuccess && (
+        <div style={{ margin: "4rem 0rem" }}>
+          <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1" style={{ marginBottom: '10rem' }}>
+            <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
+              Files Uploaded
+            </h4>
 
-      <div style={{ margin: "4rem 0rem" }}>
-        <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1" style={{ marginBottom: '10rem' }}>
-          <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-            Files Uploaded
-          </h4>
-
-          <div className="flex justify-between" style={{ padding: '2rem 0rem' }}>
-            <div className="flex items-center mb-4 md:mb-0">
-              <ButtonGroup
-                options={[
-                  { value: 'all', label: 'View All' },
-                  { value: 'recent', label: 'Most Recent' },
-                  { value: 'older', label: 'Older Files' },
-                ]}
-                selected={sortOption}
-                onChange={handleSortChange}
-              />
-            </div>
-
-            <div className="flex items-start md:flex-row mb-4 md:mb-0">
-              <label htmlFor="search" className="block text-md font-medium text-black mr-2">
-                Search
-              </label>
-              <input
-                type="text"
-                id="search"
-                className="p-2 border border-black rounded-md"
-                value={searchValue}
-                onChange={handleSearchChange}
-              />
-            </div>
-          </div>
-
-          <div className="relative inline-block text-left">
-            <div>
-              <button
-                type="button"
-                className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                id="options-menu"
-                aria-haspopup="true"
-                aria-expanded="true"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-              >
-                Download <DownloadIcon className="w-5 h-5 ml-2 -mr-1" aria-hidden="true" />
-              </button>
-            </div>
-            {dropdownOpen && (
-              <div
-                className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none"
-                role="menu"
-                aria-orientation="vertical"
-                aria-labelledby="options-menu"
-              >
-                <div className="py-1" role="none">
-                  <button
-                    className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    role="menuitem"
-                    onClick={() => handleDownload('pdf')}
-                  >
-                    Download as PDF
-                  </button>
-                  <button
-                    className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    role="menuitem"
-                    onClick={() => handleDownload('csv')}
-                  >
-                    Download as CSV
-                  </button>
-                </div>
+            <div className="flex justify-between" style={{ padding: '2rem 0rem' }}>
+              <div className="flex items-center mb-4 md:mb-0">
+                <ButtonGroup
+                  options={[
+                    { value: 'all', label: 'View All' },
+                    { value: 'recent', label: 'Most Recent' },
+                    { value: 'older', label: 'Older Files' },
+                  ]}
+                  selected={sortOption}
+                  onChange={handleSortChange}
+                />
               </div>
-            )}
 
+              <div className="flex items-center md:flex-row mb-4 md:mb-0 align-items-center">
+                <label htmlFor="search" className="block text-md font-medium text-black mr-2 text-center">
+                  Search
+                </label>
+                <input
+                  type="text"
+                  id="search"
+                  className="p-2 border border-black rounded-md"
+                  value={searchValue}
+                  onChange={handleSearchChange}
+                />
+              </div>
+            </div>
 
-          </div>
+            <div className="relative inline-block flex flex-row" style={{ justifyContent: "flex-end", marginBottom: '1rem' }}>
+              <div>
+                <button
+                  type="button"
+                  className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  id="options-menu"
+                  aria-haspopup="true"
+                  aria-expanded="true"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                >
+                  Download <DownloadIcon className="w-5 h-5 ml-2 -mr-1" aria-hidden="true" />
+                </button>
+              </div>
+              {dropdownOpen && (
+                <div
+                  className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="options-menu"
+                >
+                  <div className="py-1" role="none">
+                    <button
+                      className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      role="menuitem"
+                      onClick={() => handleDownload('pdf')}
+                    >
+                      Download as PDF
+                    </button>
+                    <button
+                      className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      role="menuitem"
+                      onClick={() => handleDownload('csv')}
+                    >
+                      Download as CSV
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
-
-          <ListTable
-            selectedProject={selectedProject}
-            handleDelete={handleDelete}
-            handleFileDownload={handleFileDownload}
-            handleViewImage={handleViewImage}
-            currentFiles={currentItems}
-            {...props}
-          />
-          <div className="flex justify-end mt-4">
-            {totalPages > 1 && (
-              <Pagination
-                totalPages={totalPages}
-                currentPage={currentPage}
-                onPageChange={handlePageChange}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Modal */}
-      {/*   <div className={`fixed inset-0 flex items-center justify-center z-50 ${modalOpen ? 'block' : 'hidden'}`}>
-        <div className="modal-overlay absolute inset-0 bg-black opacity-75"></div>
-        <div className="modal-content bg-white p-4">
-          <img src={modalImageUrl} alt="Preview" className="max-w-full max-h-full" />
-        </div>
-        <button className="modal-close absolute top-0 right-0 mt-4 mr-4 text-white" onClick={() => setModalOpen(false)}>
-          <svg className="fill-current text-white" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
-            <path
-              d="M17.293 15.293L12.586 10.586L17.293 5.879C17.683 5.488 17.683 4.854 17.293 4.464C16.902 4.073 16.268 4.073 15.879 4.464L11.172 9.172L6.464 4.464C6.073 4.073 5.439 4.073 5.049 4.464C4.659 4.854 4.659 5.488 5.049 5.879L9.757 10.586L5.049 15.293C4.659 15.683 4.659 16.317 5.049 16.707C5.439 17.098 6.073 17.098 6.464 16.707L11.172 12L15.879 16.707C16.268 17.098 16.902 17.098 17.293 16.707C17.683 16.317 17.683 15.683 17.293 15.293Z"
+            <ListTable
+              selectedProject={selectedProject}
+              handleDelete={handleDelete}
+              handleFileDownload={handleFileDownload}
+              handleViewImage={handleViewImage}
+              currentFiles={currentItems}
+              {...props}
             />
-          </svg>
-        </button>
-      </div> */}
+            <div className="flex justify-end mt-4">
+              {totalPages > 1 && (
+                <Pagination
+                  totalPages={totalPages}
+                  currentPage={currentPage}
+                  onPageChange={handlePageChange}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Modal */}
-      {/* Modal */}
+
       {/* Modal */}
       {modalOpen && (
         <div className="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">

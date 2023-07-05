@@ -85,6 +85,8 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState('');
+  const [showFileMax, setShowFileMax] = useState(false);
+  const [showFileSizeMaxAlert, setShowFileSizeMaxAlert] = useState(false)
 
   const handleViewImage = (imageUrl) => {
     showModal({ imageUrl });
@@ -136,8 +138,34 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     }
   };
 
-  const onDrop = (acceptedFiles) => {
-    setFiles([...files, ...acceptedFiles]);
+  /*  const onDrop = (acceptedFiles) => {
+     setFiles([...files, ...acceptedFiles]);
+   }; */
+  const fileValidator = (file) => {
+    console.log("this is the file", file)
+    if (file.size > 300000000) {
+      console.log({
+        code: "size too large",
+        message: "The size of the file is large.Please upload a smaller size"
+      })
+      setShowFileSizeMaxAlert(true)
+    } else {
+      console.log({
+        code: "size is the right size",
+        message: "Please continue to upload the file"
+      })
+      setShowFileSizeMaxAlert(false)
+    }
+
+  }
+
+  const onDrop = (acceptedFiles, rejectedFiles) => {
+    if (acceptedFiles.length + rejectedFiles.length > 2) {
+      setShowFileMax(true);
+    } else {
+      setFiles([...files, ...acceptedFiles]);
+      setShowFileMax(false);
+    }
   };
 
   const {
@@ -147,7 +175,16 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     isFocused,
     isDragAccept,
     isDragReject
-  } = useDropzone({ onDrop });
+  } = useDropzone({
+    onDrop,
+    maxFiles: 2,
+    validator: fileValidator,
+    accept: {
+      'image/*': ['.jpeg', '.png', '.jpg'],
+      'audio/*':['.mpeg','.mpeg3', '.x-mpeg-3', '.wav', '.midi', '.x-midi', '.ogg', '.webm', '.aac'],
+      'video/*':['.mpeg','.mp4', '.ogg', '.mp2t',  '.webm']
+    },
+  });
 
   const style = useMemo(
     () => ({
@@ -265,7 +302,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     updatedFiles.splice(index, 1);
     setFiles(updatedFiles);
   };
-  console.log("this is the uploading state", isUploading)
+
 
   const downloadPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4'); // 'l' stands for landscape orientation
@@ -338,6 +375,43 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
           </div>
         </div>
       </div>
+
+      {showFileMax && (
+        <div
+          class="mb-4 rounded-lg bg-danger-100 px-6 py-5 text-base text-danger-700" role="alert">
+          <div className=" p-6 text-gray-700 flex flex-row justiy-content-between" >
+            <p className="font-medium">Max files to upload is 2</p>
+            <button
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none"
+              onClick={() => setShowFileMax(false)}
+            >
+
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showFileSizeMaxAlert && (
+        <div
+          class="mb-4 rounded-lg bg-danger-100 px-6 py-5 text-base text-danger-700"
+          role="alert">
+          <div className=" p-6 text-gray-700 flex flex-row" style={{justifyContent: "space-between"}}>
+            <p> File is more than 30mbs.Please compress it to upload</p>
+            <button
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none"
+              onClick={() => setShowFileSizeMaxAlert(false)}
+            >
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       <div {...getRootProps({ style })} className="p-4 border-2 border-gray-300 border-dashed rounded-md">
         {files?.length > 0 && isUploading === false ? (
@@ -499,7 +573,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
       </div>
 
       {/* Modal */}
-    {/*   <div className={`fixed inset-0 flex items-center justify-center z-50 ${modalOpen ? 'block' : 'hidden'}`}>
+      {/*   <div className={`fixed inset-0 flex items-center justify-center z-50 ${modalOpen ? 'block' : 'hidden'}`}>
         <div className="modal-overlay absolute inset-0 bg-black opacity-75"></div>
         <div className="modal-content bg-white p-4">
           <img src={modalImageUrl} alt="Preview" className="max-w-full max-h-full" />
@@ -513,25 +587,40 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
         </button>
       </div> */}
 
-       {/* Modal */}
-       {modalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="modal-overlay fixed inset-0 bg-black opacity-75"></div>
-          <div className="modal-content bg-white p-4 mx-auto max-w-lg">
-            <img src={modalImageUrl} alt="Preview" className="max-w-full max-h-full" />
-            <button
-              className="absolute top-4 right-4 text-white rounded-full bg-black opacity-75 p-2"
-              onClick={() => setModalOpen(false)}
-            >
-              <svg className="w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path
-                  d="M17.3 15.3L12 10.6L6.7 15.3C6.3 15.7 5.7 15.7 5.3 15.3C4.9 14.9 4.9 14.3 5.3 13.9L10.6 9.2L5.3 4.5C4.9 4.1 4.9 3.5 5.3 3.1C5.7 2.7 6.3 2.7 6.7 3.1L12 7.8L17.3 3.1C17.7 2.7 18.3 2.7 18.7 3.1C19.1 3.5 19.1 4.1 18.7 4.5L13.4 9.2L18.7 13.9C19.1 14.3 19.1 14.9 18.7 15.3C18.3 15.7 17.7 15.7 17.3 15.3Z"
-                />
-              </svg>
-            </button>
+      {/* Modal */}
+      {/* Modal */}
+      {/* Modal */}
+      {modalOpen && (
+        <div className="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          {/* Background backdrop */}
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+          <div className="fixed inset-0 z-10 overflow-y-auto">
+            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              {/* Modal panel */}
+              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+
+                    <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                      <h3 className="text-base font-semibold leading-6 text-gray-900" id="modal-title">File preview</h3>
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-500">Preview  image gallery </p>
+                      </div>
+                    </div>
+                    <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-500" onClick={() => setModalOpen(false)}>
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
+
 
 
     </div>

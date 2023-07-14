@@ -12,6 +12,8 @@ import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
+
+
 const getFileType = (fileName) => {
   const fileExtension = fileName.split('.').pop();
   // Add more file type mappings as needed
@@ -86,14 +88,18 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState('');
   const [showFileMax, setShowFileMax] = useState(false);
-  const [showFileSizeMaxAlert, setShowFileSizeMaxAlert] = useState(false)
-  const [isfetchingSuccess, setIsfetchingSuccess] = useState(false)
-  const [showNoSelectAlert, setShowNoSelectAlert] = useState(false)
+  const [showFileSizeMaxAlert, setShowFileSizeMaxAlert] = useState(false);
+  const [isfetchingSuccess, setIsfetchingSuccess] = useState(false);
+  const [showNoSelectAlert, setShowNoSelectAlert] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [previewUrl, setPreviewUrl] = useState('');
 
-
-  console.log("this is the modalImage", modalImageUrl)
-  const handleViewImage = (imageUrl) => {
-    showModal({ imageUrl });
+  const handleViewImage = (key) => {
+    const file = currentItems.find((file) => file.Key === key);
+    if (file) {
+      setPreviewUrl(file.thumbnail);
+      showModal(true);
+    }
   };
 
   const showModal = ({ imageUrl }) => {
@@ -106,14 +112,75 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     fetchBucketObjects();
   }, []);
 
+
+  const generatePresignedUrl = async (bucketName, key, expiration, contentType) => {
+    const s3 = new AWS.S3();
+    const params = {
+      Bucket: bucketName,
+      Key: key,
+      Expires: expiration,
+      ResponseContentDisposition: 'inline',
+      ResponseContentType: contentType,
+    };
+    const imageUrlPresign = await s3.getSignedUrlPromise('getObject', params);
+    return imageUrlPresign;
+  };
+
   const fetchBucketObjects = async () => {
     try {
-      const response = await s3.listObjectsV2({ Bucket: process.env.REACT_APP_BUCKET, Prefix: 'data/brenda/final-test-url/2023_05_18-SD1-device1/' }).promise();
-      setBucketObjects(response.Contents);
-      setIsfetchingSuccess(true)
+      const response = await s3.listObjectsV2({
+        Bucket: process.env.REACT_APP_BUCKET,
+        Prefix: `data/brenda/final-test-url/2023_05_18-SD1-device1/${selectedProject}`
+      }).promise();
+
+      const objectsWithPresignedURLs = [];
+      for (const object of response.Contents) {
+        const filename = object.Key.substring(object.Key.lastIndexOf('/') + 1);
+        const fileExtension = filename.substring(filename.lastIndexOf('.') + 1);
+        let responseContentType = 'application/octet-stream'; // Default to binary/octet-stream
+
+        if (fileExtension === 'jpeg' || fileExtension === 'jpg') {
+          responseContentType = 'image/jpeg';
+        } else if (fileExtension === 'png') {
+          responseContentType = 'image/png';
+        } else if (fileExtension === 'gif') {
+          responseContentType = 'image/gif';
+        }
+
+        // Generate the presigned URL for thumbnail
+        const preview = await generatePresignedUrl(
+          process.env.REACT_APP_BUCKET,
+          object.Key,
+          63072000, // Expiration time in seconds (2 years)
+          responseContentType
+        ).catch((error) => {
+          console.error('Error generating thumbnail presigned URL:', error);
+          return null; // Return null in case of an error
+        });
+        // Generate the presigned URL for thumbnail
+        const thumbnail = await generatePresignedUrl(
+          process.env.REACT_APP_BUCKET,
+          object.Key,
+          63072000, // Expiration time in seconds (2 years)
+          responseContentType
+        ).catch((error) => {
+          console.error('Error generating thumbnail presigned URL:', error);
+          return null; // Return null in case of an error
+        });
+
+        // Add the modified object with presigned URLs to the array
+        objectsWithPresignedURLs.push({
+          ...object,
+          thumbnail,
+          preview,
+          alt: filename
+        });
+      }
+      setBucketObjects(objectsWithPresignedURLs);
+      setIsfetchingSuccess(true);
     } catch (error) {
       console.error('Error fetching bucket objects:', error);
-      setIsfetchingSuccess(false)
+      setIsfetchingSuccess(false);
     }
   };
 
@@ -121,10 +188,8 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     try {
       await s3.deleteObject({ Bucket: process.env.REACT_APP_BUCKET, Key: fileName }).promise();
       fetchBucketObjects(); // Fetch updated bucket objects after deletion
-
     } catch (error) {
       console.error('Error deleting file:', error);
-
     }
   };
 
@@ -146,11 +211,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     }
   };
 
-  /*  const onDrop = (acceptedFiles) => {
-     setFiles([...files, ...acceptedFiles]);
-   }; */
   const fileValidator = (file) => {
-    console.log("this is the file", file)
     if (file.size > 300000000) {
       console.log({
         code: "size too large",
@@ -164,7 +225,6 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
       })
       setShowFileSizeMaxAlert(false)
     }
-
   }
 
   const onDrop = (acceptedFiles, rejectedFiles) => {
@@ -188,9 +248,10 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     maxFiles: 2,
     validator: fileValidator,
     accept: {
-      'image/*': ['.jpeg', '.png', '.jpg', '.gif'],
+      'image/*': ['.jpeg', '.png', '.jpg'],
       'audio/*': ['.mpeg', '.mpeg3', '.x-mpeg-3', '.wav', '.midi', '.x-midi', '.ogg', '.webm', '.aac'],
-      'video/*': ['.mpeg', '.mp4', '.ogg', '.mp2t', '.webm']
+      'video/*': ['.mpeg', '.mp4', '.ogg', '.mp2t', '.webm'],
+      'application/zip': ['.zip']
     },
   });
 
@@ -208,8 +269,9 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     const fileName = file.name;
     const params = {
       Bucket: process.env.REACT_APP_BUCKET,
-      Key: `${process.env.REACT_APP_TARGET}/${process.env.REACT_APP_SOURCE}/${fileName}`,
-      Body: process.env.REACT_APP_REGION
+      Key: `${process.env.REACT_APP_TARGET}/${process.env.REACT_APP_SOURCE}/${selectedProject}/${fileName}`,
+      Body: file,
+      ContentType: file.type,
     };
 
     return new Promise((resolve, reject) => {
@@ -239,34 +301,42 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     }
 
     try {
-      for (const file of files) {
+      const uploadPromises = files.map(async (file) => {
         setCurrentFile(file);
         const fileUrl = await uploadFile(file);
         console.log('Uploaded file URL:', fileUrl);
 
         // Send POST request to the API for each uploaded file
-        const apiUrl = `https://6pq11i2mul.execute-api.eu-west-1.amazonaws.com/api-sqs/sqs?MessageBody=%7B%22bucket%22%3A%22pufferfish-test%22%2C%22directory_path%22%3A%22data/brenda/final-test-url/2023_05_18-SD1-device1%22%2C%22shortname%22%3A%22sipecam%22%2C%22username%22%3A%22brenda%22%7D`;
+        const apiUrl = `https://6pq11i2mul.execute-api.eu-west-1.amazonaws.com/api-sqs/sqs?MessageBody=%7B%22bucket%22%3A%22pufferfish-test%22%2C%22directory_path%22%3A%22data/brenda/final-test-url/2023_05_18-SD1-device1/${selectedProject}%22%2C%22shortname%22%3A%22sipecam%22%2C%22username%22%3A%22brenda%22%7D`;
 
         await axios.post(apiUrl, null, {
           headers: {
             'Access-Control-Allow-Origin': 'http://localhost:3000',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
             'Access-Control-Allow-Headers': '*',
+            'Content-Type': 'multipart/form-data',
           },
         });
-        await fetchBucketObjects();
-      }
+        // Update the list of uploaded files
+        setUploadedFiles((prevUploadedFiles) => [...prevUploadedFiles, file]);
 
+      });
+
+      await Promise.all(uploadPromises);
+      await fetchBucketObjects();
       setFiles([]);
 
     } catch (error) {
       console.error('Error uploading files:', error);
     } finally {
-      setIsUploading(false);
+
+      setFiles([]);
       setCurrentFile(null);
       setOverallProgress(0);
+      setIsUploading(false);
     }
   };
+
 
   const handleSearchChange = (e) => {
     setSearchValue(e.target.value);
@@ -366,6 +436,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
     }
   };
 
+
   return (
     <div className="h-100">
       <div className="mt-5 mb-5">
@@ -426,7 +497,7 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
           class="mb-4 rounded-lg bg-danger-100 text-base text-danger-700"
           role="alert">
           <div className=" p-6 text-gray-700 flex flex-row" style={{ justifyContent: "space-between" }}>
-            <p> File is more than 30mbs.Please compress it to upload</p>
+            <p> File is too large to upload.</p>
             <button
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none"
               onClick={() => setShowFileSizeMaxAlert(false)}
@@ -440,12 +511,12 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
       )}
 
       <div {...getRootProps({ style })} className="p-4 border-2 border-gray-300 border-dashed rounded-md">
-        {files?.length > 0 && isUploading === false ? (
-          <div className="flex flex-col items-start w-100">
+        {files?.length > 0 && !isUploading ? (
+          <div className="flex flex-col items-start ">
             <ul className="mt-2">
               {files?.map((file, index) => (
-                <li key={index} className="flex items-center">
-                  {file.name}
+                <li key={index} className="flex flex-row items-center" style={{ justifyContent: 'space-between' }}>
+                  <span>{file.name}</span>
                   <button
                     className="ml-2 text-red-600"
                     onClick={(event) => handleDeleteFile(index, event)}
@@ -502,105 +573,110 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
         </div>
       )}
       {!isfetchingSuccess && <div className='mb-10 mt-10'> <p>Loading files...</p></div>}
+
       {isfetchingSuccess && (
         <div style={{ margin: "4rem 0rem" }}>
-          <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1" style={{ marginBottom: '10rem' }}>
-            <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-              Files Uploaded
-            </h4>
-
-            <div className="flex justify-between" style={{ padding: '2rem 0rem' }}>
-              <div className="flex items-center mb-4 md:mb-0">
-                <ButtonGroup
-                  options={[
-                    { value: 'all', label: 'View All' },
-                    { value: 'recent', label: 'Most Recent' },
-                    { value: 'older', label: 'Older Files' },
-                  ]}
-                  selected={sortOption}
-                  onChange={handleSortChange}
-                />
-              </div>
-
-              <div className="flex items-center md:flex-row mb-4 md:mb-0 align-items-center">
-                <label htmlFor="search" className="block text-md font-medium text-black mr-2 text-center">
-                  Search
-                </label>
-                <input
-                  type="text"
-                  id="search"
-                  className="p-2 border border-black rounded-md"
-                  value={searchValue}
-                  onChange={handleSearchChange}
-                />
-              </div>
-            </div>
-
-            <div className="relative inline-block flex flex-row" style={{ justifyContent: "flex-end", marginBottom: '1rem' }}>
-              <div>
-                <button
-                  type="button"
-                  className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  id="options-menu"
-                  aria-haspopup="true"
-                  aria-expanded="true"
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                >
-                  Download <DownloadIcon className="w-5 h-5 ml-2 -mr-1" aria-hidden="true" />
-                </button>
-              </div>
-              {dropdownOpen && (
-                <div
-                  className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="options-menu"
-                >
-                  <div className="py-1" role="none">
-                    <button
-                      className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                      role="menuitem"
-                      onClick={() => handleDownload('pdf')}
-                    >
-                      Download as PDF
-                    </button>
-                    <button
-                      className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                      role="menuitem"
-                      onClick={() => handleDownload('csv')}
-                    >
-                      Download as CSV
-                    </button>
-                  </div>
+          {bucketObjects.length !== 0 ? (
+            <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1" style={{ marginBottom: '10rem' }}>
+              <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
+                Files Uploaded
+              </h4>
+              <div className="flex justify-between" style={{ padding: '2rem 0rem' }}>
+                <div className="flex items-center mb-4 md:mb-0">
+                  <ButtonGroup
+                    options={[
+                      { value: 'all', label: 'View All' },
+                      { value: 'recent', label: 'Most Recent' },
+                      { value: 'older', label: 'Older Files' },
+                    ]}
+                    selected={sortOption}
+                    onChange={handleSortChange}
+                  />
                 </div>
-              )}
-            </div>
 
-            <ListTable
-              selectedProject={selectedProject}
-              handleDelete={handleDelete}
-              handleFileDownload={handleFileDownload}
-              handleViewImage={handleViewImage}
-              currentFiles={currentItems}
-              {...props}
-            />
-            <div className="flex justify-end mt-4">
-              {totalPages > 1 && (
-                <Pagination
-                  totalPages={totalPages}
-                  currentPage={currentPage}
-                  onPageChange={handlePageChange}
-                />
-              )}
+                <div className="flex items-center md:flex-row mb-4 md:mb-0 align-items-center">
+                  <label htmlFor="search" className="block text-md font-medium text-black mr-2 text-center">
+                    Search
+                  </label>
+                  <input
+                    type="text"
+                    id="search"
+                    className="p-2 border border-black rounded-md"
+                    value={searchValue}
+                    onChange={handleSearchChange}
+                  />
+                </div>
+              </div>
+
+              <div className="relative inline-block flex flex-row" style={{ justifyContent: "flex-end", marginBottom: '1rem' }}>
+                <div>
+                  <button
+                    type="button"
+                    className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    id="options-menu"
+                    aria-haspopup="true"
+                    aria-expanded="true"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                  >
+                    Download <DownloadIcon className="w-5 h-5 ml-2 -mr-1" aria-hidden="true" />
+                  </button>
+                </div>
+                {dropdownOpen && (
+                  <div
+                    className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="options-menu"
+                  >
+                    <div className="py-1" role="none">
+                      <button
+                        className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                        role="menuitem"
+                        onClick={() => handleDownload('pdf')}
+                      >
+                        Download as PDF
+                      </button>
+                      <button
+                        className="w-full flex justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                        role="menuitem"
+                        onClick={() => handleDownload('csv')}
+                      >
+                        Download as CSV
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <ListTable
+                selectedProject={selectedProject}
+                handleDelete={handleDelete}
+                handleFileDownload={handleFileDownload}
+                handleViewImage={handleViewImage}
+                currentFiles={currentItems}
+                {...props}
+              />
+              <div className="flex justify-end mt-4">
+                {totalPages > 1 && (
+                  <Pagination
+                    totalPages={totalPages}
+                    currentPage={currentPage}
+                    onPageChange={handlePageChange}
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1" style={{ marginBottom: '10rem' }}>
+              <p className="text-center mb-6 text-xl font-semibold text-black dark:text-white">No files have been uploaded </p>
+            </div>
+          )}
         </div>
       )}
 
-
       {/* Modal */}
       {modalOpen && (
-        <div className="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div className="relative z-10 mb-10 mt-10 custom-modal-width" aria-labelledby="modal-title" role="dialog" aria-modal="true">
           {/* Background backdrop */}
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
@@ -611,11 +687,16 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
                 <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                   <div className="sm:flex sm:items-start">
 
-                    <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                    <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left mt-8 mb-10">
                       <h3 className="text-base font-semibold leading-6 text-gray-900" id="modal-title">File preview</h3>
                       <div className="mt-2">
-                        <p className="text-sm text-gray-500">Preview  image gallery </p>
+
                       </div>
+
+                        <div className="gallery">
+                          <img src={previewUrl} alt="Thumbnail" />
+                        </div>
+
                     </div>
                     <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-500" onClick={() => setModalOpen(false)}>
                       <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -629,9 +710,6 @@ const S3BucketUpload = ({ selectedProject, ...props }) => {
           </div>
         </div>
       )}
-
-
-
     </div>
   );
 };

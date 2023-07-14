@@ -1,7 +1,7 @@
 import React from 'react'
 import { EyeIcon } from '@heroicons/react/solid';
 
-const ListTable = ({ currentFiles, onClick, handleViewImage, handleFileDownload, selectedProject, handleDelete }) => {
+const ListTable = ({ currentFiles, onClick,thumbnailPresignedURL, handleViewImage, handleFileDownload, selectedProject, handleDelete }) => {
 
   const getFileType = (fileName) => {
     const fileExtension = fileName.split('.').pop();
@@ -60,7 +60,7 @@ const ListTable = ({ currentFiles, onClick, handleViewImage, handleFileDownload,
           {currentFiles?.map((file, index) => (
             <tr key={index}>
               <td className="border-b border-[#eee] py-5 px-4 pl-9 dark:border-strokedark xl:pl-11">
-                <img src="https://placehold.co/50x50" alt="thumbnail" />
+                <img src={file.preview} alt="thumbnail" height="150" width="150"/>
               </td>
               <td className="border-b border-[#eee] py-5 px-4 pl-9 dark:border-strokedark xl:pl-11">
                 <h5 className="font-medium text-black dark:text-white">
@@ -88,16 +88,6 @@ const ListTable = ({ currentFiles, onClick, handleViewImage, handleFileDownload,
                 </button>
               </td>
 
-              {/*  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-              <p className="inline-flex rounded-full bg-success bg-opacity-10 py-1 px-3 text-sm font-medium text-success text-black dark:text-white">
-              {file.LastModified.toString()}
-              </p>
-            </td>
-            <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-              <button onClick={onClick} className="inline-flex rounded-full bg-success bg-opacity-10 py-1 px-3 text-sm font-medium text-success text-black dark:text-white">
-                {selectedProject}
-              </button>
-            </td> */}
 
               <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
                 <div className="flex items-center space-x-3.5">
@@ -154,7 +144,6 @@ const ListTable = ({ currentFiles, onClick, handleViewImage, handleFileDownload,
                   </button>
                 </div>
               </td>
-
             </tr>
           ))}
         </tbody>

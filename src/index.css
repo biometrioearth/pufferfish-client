@@ -6,3 +6,8 @@
   width: 100%;
 }
 
+.custom-modal-width {
+  width: 80%; /* Adjust the percentage as per your desired width */
+  margin-left: auto;
+  margin-right: auto;
+}

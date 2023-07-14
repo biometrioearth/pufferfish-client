@@ -29,6 +29,9 @@
     "react-loading-skeleton": "^3.3.1",
     "react-router-dom": "^6.11.2",
     "react-scripts": "5.0.1",
+    "react-slick": "^0.29.0",
+    "sharp": "^0.32.3",
+    "slick-carousel": "^1.8.1",
     "tw-elements": "^1.0.0-beta2",
     "web-vitals": "^2.1.0"
   },

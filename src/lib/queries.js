@@ -1,16 +1,17 @@
 import { gql } from '@apollo/client';
-/* const GET_PROJECT_WITH_SAMPLING_POINT = gql`{
-  query samplingPoint($id: ID){
-    samplingPoint(id: $id){
-      identifier,
-      project{
-        id,
-        title,
+
+const GET_PROJECT_WITH_SAMPLING_POINT = gql`
+  query GetProjectWithSamplingPoint($id: ID) {
+    samplingPoint(id: $id) {
+      identifier
+      project {
+        id
+        title
         shortname
       }
     }
   }
-}` */
+`;
 
 const GET_PROJECTS = gql`{
   allProjects{
@@ -43,5 +44,5 @@ const GET_PROJECTS = gql`{
 
 export {
   GET_PROJECTS,
-  /* GET_PROJECT_WITH_SAMPLING_POINT */
+  GET_PROJECT_WITH_SAMPLING_POINT
 }
